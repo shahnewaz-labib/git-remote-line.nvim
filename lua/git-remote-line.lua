@@ -57,12 +57,14 @@ M.git_remote_list = function()
 				local repo_url = remote_url:gsub("git@github.com:", "https://github.com/"):gsub("%.git$", "")
 
 				local branch = vim.fn.system("git rev-parse --abbrev-ref HEAD"):gsub("%s+", "")
+				local commit_hash = vim.fn.system("git rev-parse HEAD"):gsub("%s+", "")
 
 				local file_path = vim.fn.expand("%:p")
 				local relative_path =
 					vim.fn.system("git ls-files --full-name " .. vim.fn.shellescape(file_path)):gsub("%s+", "")
 
-				local url = string.format("%s/blob/%s/%s#L%d", repo_url, branch, relative_path, line_no)
+				local url = string.format("%s/blob/%s/%s#L%d", repo_url, commit_hash, relative_path, line_no)
+
 
 				if vim.fn.has("mac") == 1 then
 					vim.fn.system("open " .. vim.fn.shellescape(url))
