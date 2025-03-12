@@ -51,10 +51,10 @@ M.git_remote_list = function()
 			submit = { "<CR>", "<Space>" },
 		},
 		on_submit = function(item)
-			print("Selected remote: " .. item.text)
-			local remote_name = item.text:match("^(%S+)%s+(%S+)")
+			local remote_name, remote_url = item.text:match("^(%S+)%s+(%S+)")
+			
 			if remote_name then
-				local repo_url = vim.fn.system("gh repo view --json url -q .url"):gsub("%s+", "")
+				local repo_url = remote_url:gsub("git@github.com:", "https://github.com/"):gsub("%.git$", "")
 
 				local branch = vim.fn.system("git rev-parse --abbrev-ref HEAD"):gsub("%s+", "")
 
