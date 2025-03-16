@@ -1,4 +1,3 @@
-local popup = require("nui.popup")
 local Menu = require("nui.menu")
 
 local M = {}
@@ -13,7 +12,19 @@ local get_cursor_line_number = function()
 	return line_no
 end
 
-M.git_remote_list = function()
+--@param url string
+local function open_in_browser(url)
+	if vim.fn.has("mac") == 1 then
+		vim.fn.system("open " .. vim.fn.shellescape(url))
+	elseif vim.fn.has("unix") == 1 then
+		vim.fn.system("xdg-open " .. vim.fn.shellescape(url))
+	elseif vim.fn.has("win32") == 1 then
+		vim.fn.system("start " .. vim.fn.shellescape(url))
+	end
+	print("Opening: " .. url)
+end
+
+M.open_remote_line = function(start_line, end_line)
 	local is_git_repo = vim.fn.system("git rev-parse --is-inside-work-tree"):gsub("%s+", "")
 	if is_git_repo ~= "true" then
 		print("Not a git repo")
@@ -57,24 +68,21 @@ M.git_remote_list = function()
 				local repo_url = remote_url:gsub("git@github.com:", "https://github.com/"):gsub("%.git$", "")
 
 				local branch = vim.fn.system("git rev-parse --abbrev-ref HEAD"):gsub("%s+", "")
+				-- TODO: get the commit hash of the selected remote
 				local commit_hash = vim.fn.system("git rev-parse HEAD"):gsub("%s+", "")
 
 				local file_path = vim.fn.expand("%:p")
 				local relative_path =
 					vim.fn.system("git ls-files --full-name " .. vim.fn.shellescape(file_path)):gsub("%s+", "")
 
-				local url = string.format("%s/blob/%s/%s#L%d", repo_url, commit_hash, relative_path, line_no)
-
-
-				if vim.fn.has("mac") == 1 then
-					vim.fn.system("open " .. vim.fn.shellescape(url))
-				elseif vim.fn.has("unix") == 1 then
-					vim.fn.system("xdg-open " .. vim.fn.shellescape(url))
-				elseif vim.fn.has("win32") == 1 then
-					vim.fn.system("start " .. vim.fn.shellescape(url))
+				local url
+				if end_line and end_line ~= start_line then
+					url = string.format("%s/blob/%s/%s#L%d-L%d", repo_url, commit_hash, relative_path, start_line, end_line)
+				else
+					url = string.format("%s/blob/%s/%s#L%d", repo_url, commit_hash, relative_path, start_line)
 				end
-
-				print("Opening: " .. url)
+				print("Start Line: " .. start_line .. " End Line: " .. end_line)
+				open_in_browser(url)
 			else
 				print("No remote name found")
 			end
@@ -84,6 +92,28 @@ M.git_remote_list = function()
 	menu:mount()
 
 	return nil
+end
+
+function M.open_remote_url()
+    local start_line, end_line
+    
+    if vim.fn.exists('*nvim_buf_get_mark') == 1 then
+        local visual_start = vim.api.nvim_buf_get_mark(0, '<')
+        local visual_end = vim.api.nvim_buf_get_mark(0, '>')
+        
+        if visual_start[1] ~= 0 and visual_end[1] ~= 0 then
+            start_line = visual_start[1]
+            end_line = visual_end[1]
+        else
+            start_line = vim.fn.line(".")
+            end_line = start_line
+        end
+    else
+        start_line = vim.fn.line(".")
+        end_line = start_line
+    end
+    
+    M.open_remote_line(start_line, end_line)
 end
 
 return M
