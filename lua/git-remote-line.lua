@@ -68,8 +68,17 @@ M.open_remote_line = function(start_line, end_line)
 				local repo_url = remote_url:gsub("git@github.com:", "https://github.com/"):gsub("%.git$", "")
 
 				local branch = vim.fn.system("git rev-parse --abbrev-ref HEAD"):gsub("%s+", "")
-				-- TODO: get the commit hash of the selected remote
-				local commit_hash = vim.fn.system("git rev-parse HEAD"):gsub("%s+", "")
+				
+				local commit_hash
+				local remote_branch_cmd = string.format("git ls-remote %s %s", vim.fn.shellescape(remote_name), vim.fn.shellescape(branch))
+				local remote_hash = vim.fn.system(remote_branch_cmd):match("^(%w+)")
+
+				if remote_hash and remote_hash ~= "" then
+					commit_hash = remote_hash
+				else
+					commit_hash = vim.fn.system("git rev-parse HEAD"):gsub("%s+", "")
+					print("Warning: Using local HEAD, couldn't find commit on remote")
+				end
 
 				local file_path = vim.fn.expand("%:p")
 				local relative_path =
@@ -81,7 +90,6 @@ M.open_remote_line = function(start_line, end_line)
 				else
 					url = string.format("%s/blob/%s/%s#L%d", repo_url, commit_hash, relative_path, start_line)
 				end
-				print("Start Line: " .. start_line .. " End Line: " .. end_line)
 				open_in_browser(url)
 			else
 				print("No remote name found")
