@@ -1,15 +1,27 @@
 local Menu = require("nui.menu")
 
-local M = {}
-
-M.setup = function()
-	-- nothing
-end
-
 --@return number
 local get_cursor_line_number = function()
 	local line_no, _ = unpack(vim.api.nvim_win_get_cursor(0))
 	return line_no
+end
+
+--@return number, number
+local get_cursor_line_range = function()
+	local start_line = get_cursor_line_number()
+	local end_line = start_line
+
+	if vim.fn.exists('*nvim_buf_get_mark') == 1 then
+		local visual_start = vim.api.nvim_buf_get_mark(0, '<')
+		local visual_end = vim.api.nvim_buf_get_mark(0, '>')
+
+		if visual_start[1] ~= 0 and visual_end[1] ~= 0 then
+			start_line = visual_start[1]
+			end_line = visual_end[1]
+		end
+	end
+
+	return start_line, end_line
 end
 
 --@param url string
@@ -35,7 +47,7 @@ end
 
 --@param start_line number
 --@param end_line number
-M.build_github_url = function(start_line, end_line, callback)
+local build_github_url = function(start_line, end_line, callback)
 	local is_git_repo = vim.fn.system("git rev-parse --is-inside-work-tree"):gsub("%s+", "")
 	if is_git_repo ~= "true" then
 		print("Not a git repo")
@@ -97,6 +109,7 @@ M.build_github_url = function(start_line, end_line, callback)
 				local file_path = vim.fn.expand("%:p")
 				local relative_path =
 					vim.fn.system("git ls-files --full-name " .. vim.fn.shellescape(file_path)):gsub("%s+", "")
+				
 				local url
 				if end_line and end_line ~= start_line then
 					url = string.format("%s/blob/%s/%s#L%d-L%d", repo_url, commit_hash, relative_path, start_line, end_line)
@@ -122,30 +135,32 @@ end
 
 --@param mode string
 --@return nil
-M.main = function(mode)
-    local start_line, end_line = M.get_cursor_line_range()
+local main = function(mode)
+    local start_line, end_line = get_cursor_line_range()
 	if mode == "copy" then
-		M.build_github_url(start_line, end_line, copy_to_clipboard)
+		build_github_url(start_line, end_line, copy_to_clipboard)
 	elseif mode == "open" then
-		M.build_github_url(start_line, end_line, open_in_browser)
+		build_github_url(start_line, end_line, open_in_browser)
 	end
 end
 
-M.get_cursor_line_range = function()
-	local start_line = get_cursor_line_number()
-	local end_line = start_line
+local M = {}
 
-	if vim.fn.exists('*nvim_buf_get_mark') == 1 then
-		local visual_start = vim.api.nvim_buf_get_mark(0, '<')
-		local visual_end = vim.api.nvim_buf_get_mark(0, '>')
-
-		if visual_start[1] ~= 0 and visual_end[1] ~= 0 then
-			start_line = visual_start[1]
-			end_line = visual_end[1]
-		end
-	end
-
-	return start_line, end_line
+M.setup = function()
+	vim.api.nvim_create_user_command("GRL", function(opts)
+        local mode = opts.args
+        if mode ~= "copy" and mode ~= "open" then
+            print("Invalid mode. Usage: GRL copy|open")
+            return
+        end
+        main(mode)
+    end, {
+        nargs = 1,
+        desc = "GitHub Remote Line - Generate GitHub URL for current line(s)",
+        complete = function()
+            return {"copy", "open"}
+        end
+    })
 end
 
 return M
