@@ -163,8 +163,11 @@ end
 
 --@param mode string
 --@return nil
-local main = function(mode)
-    local start_line, end_line = get_cursor_line_range()
+local main = function(mode, start_line, end_line)
+	if not start_line or not end_line then
+		start_line, end_line = get_cursor_line_range()
+	end
+
 	if mode == "copy" then
 		build_github_url(start_line, end_line, copy_to_clipboard)
 	elseif mode == "open" then
@@ -174,16 +177,17 @@ end
 
 local M = {}
 
-M.setup = function()
+M.setup = function(opts)
 	vim.api.nvim_create_user_command("GRL", function(opts)
         local mode = opts.args
         if mode ~= "copy" and mode ~= "open" then
             print("Invalid mode. Usage: GRL copy|open")
             return
         end
-        main(mode)
+        main(mode, opts.line1, opts.line2)
     end, {
         nargs = 1,
+		range = true,
         desc = "GitHub Remote Line - Generate GitHub URL for current line(s)",
         complete = function()
             return {"copy", "open"}
