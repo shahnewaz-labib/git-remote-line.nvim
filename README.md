@@ -2,6 +2,8 @@
 
 Generate and share GitHub permalinks for code selections directly from Neovim.
 
+![GRL Demo](https://raw.githubusercontent.com/wiki/shahnewaz-labib/git-remote-line.nvim/assets/output.gif)
+
 ## Prerequisites
 
 - [gh](https://cli.github.com/) needs to be set up
@@ -15,11 +17,8 @@ Generate and share GitHub permalinks for code selections directly from Neovim.
   "shahnewaz-labib/git-remote-line",
   config = function()
     require("git-remote-line").setup()
-    vim.keymap.set("n", "<leader>grl", ":GRL copy<CR>", { desc = "Copy GitHub permalink" })
-    vim.keymap.set("n", "<leader>gro", ":GRL open<CR>", { desc = "Open GitHub permalink in browser" })
-
-    vim.keymap.set("v", "<leader>grl", ":GRL copy<CR>", { desc = "Copy GitHub permalink for selection" })
-    vim.keymap.set("v", "<leader>gro", ":GRL open<CR>", { desc = "Open GitHub permalink for selection" })
+    vim.keymap.set({ "n", "v" }, "<leader>grl", ":GRL copy<CR>", { desc = "Copy GitHub permalink" })
+    vim.keymap.set({ "n", "v" }, "<leader>gro", ":GRL open<CR>", { desc = "Open GitHub permalink in browser" })
   end,
   dependencies = {
     "MunifTanjim/nui.nvim",
