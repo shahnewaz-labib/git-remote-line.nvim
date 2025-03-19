@@ -2,6 +2,9 @@
 
 Generate and share GitHub permalinks for code selections directly from Neovim.
 
+![GRL Demo](https://raw.githubusercontent.com/wiki/shahnewaz-labib/git-remote-line.nvim/assets/output.gif)
+
+
 ## Prerequisites
 
 - [gh](https://cli.github.com/) needs to be set up
